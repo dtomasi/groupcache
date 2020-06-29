@@ -27,6 +27,7 @@ package groupcache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -241,6 +242,9 @@ func (g *Group) Get(ctx context.Context, key string, dest Sink) error {
 // Remove clears the key from our cache then forwards the remove
 // request to all peers.
 func (g *Group) Remove(ctx context.Context, key string) error {
+
+	fmt.Println("Try to remove key" + key)
+
 	g.peersOnce.Do(g.initPeers)
 
 	_, err := g.removeGroup.Do(key, func() (interface{}, error) {
@@ -270,10 +274,8 @@ func (g *Group) Remove(ctx context.Context, key string) error {
 				wg.Done()
 			}()
 		}
-		go func() {
-			wg.Wait()
-			close(errs)
-		}()
+		wg.Wait()
+		close(errs)
 
 		// TODO(thrawn01): Should we report all errors? Reporting context
 		//  cancelled error for each peer doesn't make much sense.
